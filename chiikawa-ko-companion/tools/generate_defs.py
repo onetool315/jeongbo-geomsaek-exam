@@ -32,7 +32,7 @@ write("RP/manifest.json", {
         "description": "치이카와 모브(Popular Biology) 애드온 한국어 번역 + 추가 아이템/블록 텍스처",
         "uuid": RP_UUID,
         "version": VERSION,
-        "min_engine_version": [1, 21, 60],
+        "min_engine_version": [1, 21, 100],
     },
     "modules": [{"type": "resources", "uuid": RP_MOD, "version": VERSION}],
     "dependencies": [{"uuid": BP_UUID, "version": VERSION}],
@@ -46,7 +46,7 @@ write("BP/manifest.json", {
         "description": "자바판 치이카와 모드 기능 이식: 노동 게시판, 시험용 책상, 상점, 펫 종, 호루라기 사탕, 선물 (치이카와 모브 애드온 필요)",
         "uuid": BP_UUID,
         "version": VERSION,
-        "min_engine_version": [1, 21, 60],
+        "min_engine_version": [1, 21, 100],
     },
     "modules": [
         {"type": "data", "uuid": BP_MOD, "version": VERSION},
@@ -59,8 +59,8 @@ write("BP/manifest.json", {
         },
     ],
     "dependencies": [
-        {"module_name": "@minecraft/server", "version": "1.17.0"},
-        {"module_name": "@minecraft/server-ui", "version": "1.3.0"},
+        {"module_name": "@minecraft/server", "version": "2.0.0"},
+        {"module_name": "@minecraft/server-ui", "version": "2.0.0"},
     ],
     "metadata": META,
 })

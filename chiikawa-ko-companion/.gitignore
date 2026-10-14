@@ -1,0 +1,3 @@
+personal/
+dist/*.tmp
+tests/src/
