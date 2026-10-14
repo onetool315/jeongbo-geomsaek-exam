@@ -1,0 +1,21 @@
+{
+  "resource_pack_name": "chiikawa_ko_companion",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "pet_bell": {
+      "textures": "textures/items/pet_bell"
+    },
+    "whistle_candy": {
+      "textures": "textures/items/whistle_candy"
+    },
+    "handbook": {
+      "textures": "textures/items/handbook"
+    },
+    "weeding_book": {
+      "textures": "textures/items/weeding_book"
+    },
+    "simple_dish": {
+      "textures": "textures/items/simple_dish"
+    }
+  }
+}

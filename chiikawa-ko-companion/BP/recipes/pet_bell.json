@@ -1,0 +1,23 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "chiikawa:pet_bell"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:bell"
+      },
+      {
+        "item": "minecraft:lead"
+      }
+    ],
+    "result": {
+      "item": "chiikawa:pet_bell",
+      "count": 1
+    }
+  }
+}

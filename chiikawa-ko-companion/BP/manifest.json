@@ -1,0 +1,56 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "§d치이카와 모브 확장 §7[BP]",
+    "description": "자바판 치이카와 모드 기능 이식: 노동 게시판, 시험용 책상, 상점, 펫 종, 호루라기 사탕, 선물 (치이카와 모브 애드온 필요)",
+    "uuid": "8e2b9f40-71c3-4d6a-b5e8-0c9a3d1f7a02",
+    "version": [
+      0,
+      1,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      60
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "a3c58e17-4d90-42f6-b71a-9e0c2d4f8b04",
+      "version": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "5b7d1e92-0a64-4c38-9f25-d8e3a6c1b405",
+      "version": [
+        0,
+        1,
+        0
+      ],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.17.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.3.0"
+    }
+  ],
+  "metadata": {
+    "authors": [
+      "Companion add-on (Korean localisation + Java-mod feature port)"
+    ],
+    "license": "Companion packs only. Does NOT contain files of 'Chikawa Mob (Popular Biology)'."
+  }
+}

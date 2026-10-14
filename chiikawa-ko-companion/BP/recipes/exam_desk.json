@@ -1,0 +1,27 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "chiikawa:exam_desk"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "PPP",
+      "S S"
+    ],
+    "key": {
+      "P": {
+        "tag": "minecraft:planks"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "result": {
+      "item": "chiikawa:exam_desk",
+      "count": 1
+    }
+  }
+}

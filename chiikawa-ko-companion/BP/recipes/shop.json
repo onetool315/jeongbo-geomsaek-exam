@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "chiikawa:shop"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "WWW",
+      "PEP",
+      "PPP"
+    ],
+    "key": {
+      "W": {
+        "item": "minecraft:red_wool"
+      },
+      "P": {
+        "tag": "minecraft:planks"
+      },
+      "E": {
+        "item": "minecraft:emerald"
+      }
+    },
+    "result": {
+      "item": "chiikawa:shop",
+      "count": 1
+    }
+  }
+}
