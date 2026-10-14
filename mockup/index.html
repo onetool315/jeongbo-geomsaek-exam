@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>치이카와 MVP 목업</title>
+<style>
+  :root { --bg:#1d1f24; --panel:#2b2e35; --line:#4a4f5a; --text:#f2f2f2; --sub:#a9afbb; --ok:#6fd68a; --warn:#f2c75c; --pink:#ff9ec4; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,"Noto Sans KR",sans-serif; padding:16px; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  p.lead { color:var(--sub); margin:0 0 16px; font-size:14px; }
+  .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .tabs button { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 12px; font-size:14px; }
+  .tabs button.on { border-color:var(--pink); color:var(--pink); }
+  .phone { max-width:420px; margin:0 auto; background:#000; border:2px solid var(--line); border-radius:18px; padding:12px; }
+  .world { height:200px; border-radius:10px; background:linear-gradient(#8fd0ff 0 55%, #6fbf5a 55% 100%); position:relative; overflow:hidden; }
+  .pet { position:absolute; bottom:28px; font-size:34px; transition:left .6s; }
+  .bubble { position:absolute; background:#fff; color:#222; border-radius:10px; padding:4px 8px; font-size:12px; bottom:76px; }
+  .chat { margin-top:8px; font-size:13px; min-height:64px; background:rgba(255,255,255,.06); border-radius:8px; padding:8px; }
+  .chat div { margin:2px 0; }
+  .hotbar { display:flex; gap:6px; margin-top:8px; }
+  .hotbar button { flex:1; background:var(--panel); border:2px solid var(--line); border-radius:6px; color:var(--text); padding:8px 2px; font-size:12px; }
+  .hotbar button small { display:block; color:var(--sub); font-size:10px; }
+  .form { margin-top:10px; background:var(--panel); border:2px solid var(--line); border-radius:8px; padding:12px; }
+  .form h2 { margin:0 0 8px; font-size:16px; }
+  .form button { display:block; width:100%; text-align:left; background:#3b3f49; border:1px solid var(--line); border-radius:6px; color:var(--text); padding:10px; margin:6px 0; font-size:14px; }
+  .form button small { color:var(--sub); display:block; }
+  .note { max-width:420px; margin:14px auto 0; font-size:13px; color:var(--sub); line-height:1.6; }
+  .note b { color:var(--text); }
+  .scope { max-width:420px; margin:18px auto 0; border:1px dashed var(--line); border-radius:10px; padding:12px; font-size:13px; }
+  .scope li { margin:3px 0; }
+  .ok { color:var(--ok); } .later { color:var(--warn); }
+</style>
+</head>
+<body>
+<h1>치이카와 MVP 목업 · ① 펫 돌봄</h1>
+<p class="lead">폰마크 화면에서 이렇게 동작하게 만들 예정입니다. 버튼을 눌러 흐름을 확인하세요.</p>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="phone">
+  <div class="world" id="world">
+    <div class="pet" id="pet" style="left:20%">🐰</div>
+    <div class="bubble" id="bubble" style="left:20%;display:none"></div>
+  </div>
+  <div class="chat" id="chat"></div>
+  <div class="hotbar">
+    <button data-use="bell">🔔 펫 종<small>우클릭</small></button>
+    <button data-use="candy">🍭 호루라기 사탕<small>우클릭 / 웅크리기</small></button>
+    <button data-use="emerald">💎 에메랄드<small>펫에게 우클릭</small></button>
+    <button data-use="dish">🍲 간단한 요리<small>펫에게 우클릭</small></button>
+  </div>
+  <div class="form" id="form" style="display:none"></div>
+</div>
+
+<div class="note" id="note"></div>
+
+<div class="scope">
+  <b>MVP 범위</b>
+  <ul>
+    <li class="ok">✔ 펫 종 · 호루라기 사탕 · 용돈 · 간단한 요리 · 선물 전달 · 펫 대사</li>
+    <li class="ok">✔ 한국어 이름/메시지</li>
+    <li class="later">… 다음 단계: 노동 게시판 → 면허 시험 → 상점</li>
+    <li class="later">… 후순위: 배낭 슬롯, 부활, 오르골, 공연</li>
+  </ul>
+</div>
+
+<script>
+const SCENES = {
+  bell: { label:"펫 종", note:"<b>펫 종</b>: 우클릭하면 다른 차원에 있어도 내 펫이 전부 내 옆으로 옵니다. 재사용 대기 30초." },
+  candy:{ label:"호루라기 사탕", note:"<b>호루라기 사탕</b>: 우클릭 = 근처 펫에게 명령, 웅크리고 우클릭 = 따라오기 ↔ 자유 행동 전환." },
+  money:{ label:"용돈 · 선물", note:"<b>용돈 · 선물</b>: 에메랄드를 주면 펫이 상점에서 쇼핑하고, 가끔 내게 줄 선물을 사서 가져옵니다." },
+  dish: { label:"간단한 요리", note:"<b>간단한 요리</b>: 먹이면 5분 동안 속도와 의욕이 올라갑니다." }
+};
+const pet = document.getElementById("pet"), bubble = document.getElementById("bubble"), chat = document.getElementById("chat"), form = document.getElementById("form"), note = document.getElementById("note");
+let mode = "follow", cool = 0, money = 0, gift = false;
+
+function say(t, color){ const d=document.createElement("div"); d.textContent=t; if(color) d.style.color=color; chat.appendChild(d); while(chat.children.length>4) chat.removeChild(chat.firstChild); }
+function speak(t){ bubble.textContent=t; bubble.style.left=pet.style.left; bubble.style.display="block"; setTimeout(()=>bubble.style.display="none",1800); say("<우사기> "+t,"#ffe58a"); }
+function move(p){ pet.style.left=p+"%"; bubble.style.left=p+"%"; }
+
+const tabs = document.getElementById("tabs");
+Object.entries(SCENES).forEach(([k,v])=>{ const b=document.createElement("button"); b.textContent=v.label; b.onclick=()=>{ show(k); }; b.dataset.k=k; tabs.appendChild(b); });
+function show(k){ [...tabs.children].forEach(b=>b.classList.toggle("on",b.dataset.k===k)); note.innerHTML=SCENES[k].note; }
+show("bell");
+
+document.querySelectorAll("[data-use]").forEach(b=>b.onclick=()=>{
+  const u=b.dataset.use; form.style.display="none";
+  if(u==="bell"){ show("bell");
+    if(Date.now()<cool) return say("아직 울릴 수 없습니다 ("+Math.ceil((cool-Date.now())/1000)+"초 남음)","#ff8a8a");
+    cool=Date.now()+30000; move(70); say("우사기가 달려왔습니다","#6fd68a"); speak("야하아아!!");
+  } else if(u==="candy"){ show("candy");
+    mode = mode==="follow" ? "free" : "follow";
+    form.style.display="block";
+    form.innerHTML='<h2>호루라기 사탕: '+(mode==="follow"?"따라오기":"자유 행동")+'</h2><button>사용하기<small>펫 1마리가 '+(mode==="follow"?"달려왔습니다":"자유롭게 돌아다니기 시작했습니다")+'</small></button>';
+    form.querySelector("button").onclick=()=>{ move(mode==="follow"?60:15+Math.random()*60); say(mode==="follow"?"펫 1마리가 달려왔습니다":"펫 1마리가 자유롭게 돌아다니기 시작했습니다","#6fd68a"); speak("야하!"); form.style.display="none"; };
+  } else if(u==="emerald"){ show("money");
+    money++; say("우사기에게 용돈으로 에메랄드 1개를 주었습니다. (가방: "+money+")","#6fd68a"); speak("푸르르르");
+    setTimeout(()=>{ if(money>0 && !gift){ money--; gift=true; say("우사기가 상점에서 에메랄드 × 1을(를) 사용했고, 당신을 위한 선물이라고 합니다","#ff9ec4"); } },1200);
+  } else if(u==="dish"){ show("dish"); say("우사기의 의욕이 5분 동안 올라갔습니다","#6fd68a"); speak("야하");
+  }
+  if(gift && u!=="emerald"){ move(30); setTimeout(()=>{ say("우사기가 쿠키 × 2을(를) 주었습니다","#ff9ec4"); speak("우라"); gift=false; },600); }
+});
+say("목업입니다. 아래 아이템을 눌러 보세요.");
+</script>
+</body>
+</html>
