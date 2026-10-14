@@ -46,6 +46,14 @@ def main(src):
             for f in files:
                 full = os.path.join(base, f)
                 z.write(full, os.path.relpath(full, tmp))
+    # same four packs as separate .mcpack files (some phones open these more reliably)
+    for name, label in [("pbmobbeh", "1_Original_BP"), ("pbmobres", "2_Original_RP"), ("ChiikawaKR_BP", "3_Extra_BP"), ("ChiikawaKR_RP", "4_Extra_RP")]:
+        folder = os.path.join(tmp, name)
+        with zipfile.ZipFile(os.path.join(OUT, f"Chiikawa_{label}.mcpack"), "w", zipfile.ZIP_DEFLATED) as z:
+            for base, _, files in os.walk(folder):
+                for f in files:
+                    full = os.path.join(base, f)
+                    z.write(full, os.path.relpath(full, folder))
     shutil.rmtree(tmp)
     print("built", out, os.path.getsize(out), "bytes")
 
