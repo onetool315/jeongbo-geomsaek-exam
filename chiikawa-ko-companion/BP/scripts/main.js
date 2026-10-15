@@ -1,6 +1,6 @@
 import { world, system } from "@minecraft/server";
 import "./items.js";
-import { openBoard, tickWeeding } from "./board.js";
+import { openBoard, tickJobs } from "./board.js";
 import { openExamDesk, resolveExams } from "./exam.js";
 import { openShop, tickPets } from "./shop.js";
 
@@ -24,7 +24,7 @@ let tick = 0;
 system.runInterval(() => {
   tick += 20;
   try {
-    if (tick % 40 === 0) tickWeeding();
+    if (tick % 40 === 0) tickJobs();
     if (tick % 100 === 0) {
       tickPets();
       resolveExams();

@@ -1,5 +1,5 @@
 import { ItemStack } from "@minecraft/server";
-import { world, K, today, getJson, setJson, ownedPets, petName, say, speak, removeItem, addToContainer, findPlayer, ownerId, isPet } from "./util.js";
+import { world, K, PET_NAMES, today, getJson, setJson, ownedPets, petName, say, speak, removeItem, addToContainer, findPlayer, ownerId, isPet } from "./util.js";
 import { ActionFormData } from "@minecraft/server-ui";
 
 const MAX_LEVEL = 5;
@@ -43,6 +43,8 @@ export function openBoard(player, block) {
   const key = boardKey(block);
   const st = load(key);
   save(key, st);
+  const known = boardKeys();
+  if (!known.includes(key)) setJson(world, "ck:boards", [...known, key]);
   const stateText = { open: "", taken: " §7(수령 완료)", done: " §a(완료)", failed: " §c(실패)" };
   const form = new ActionFormData()
     .title("노동 게시판")
@@ -117,59 +119,146 @@ function complete(pet, slip) {
   speak(pet, "paid");
 }
 
-/** pets with a weeding slip clear weeds around them (called every 2 s) */
-export function tickWeeding() {
+const HOP = 3; // blocks a pet covers per work tick (2 s) while walking to its job
+const SCAN = 10;
+
+function nearestWeed(pet) {
+  const b0 = pet.location;
+  let best, bd = Infinity;
+  for (let dx = -SCAN; dx <= SCAN; dx++) {
+    for (let dz = -SCAN; dz <= SCAN; dz++) {
+      for (let dy = -2; dy <= 2; dy++) {
+        let b;
+        try {
+          b = pet.dimension.getBlock({ x: Math.floor(b0.x) + dx, y: Math.floor(b0.y) + dy, z: Math.floor(b0.z) + dz });
+        } catch {
+          continue;
+        }
+        if (!b || !WEEDS.has(b.typeId)) continue;
+        const d = dx * dx + dy * dy + dz * dz;
+        if (d < bd) { bd = d; best = b; }
+      }
+    }
+  }
+  return best ? { block: best, dist: Math.sqrt(bd) } : undefined;
+}
+
+function hopToward(pet, target, stopAt) {
+  const l = pet.location;
+  const dx = target.x - l.x, dz = target.z - l.z;
+  const d = Math.hypot(dx, dz);
+  if (d <= stopAt) return;
+  const step = Math.min(HOP, d - stopAt);
+  try {
+    pet.teleport({ x: l.x + (dx / d) * step, y: l.y, z: l.z + (dz / d) * step }, { facingLocation: { x: target.x, y: l.y, z: target.z } });
+  } catch {
+    /* blocked / unloaded */
+  }
+}
+
+function addProgress(pet, slip, n) {
+  slip.done = Math.min(slip.need, slip.done + n);
+  if (slip.done >= slip.need) complete(pet, slip);
+  else setJson(pet, K.slip, slip);
+}
+
+function weed(pet, slip) {
+  const found = nearestWeed(pet);
+  if (!found) return;
+  if (found.dist > 2.5) return hopToward(pet, found.block.location, 1.5);
+  let cleared = 0;
+  const b0 = found.block.location;
+  for (let dx = -1; dx <= 1 && cleared < 2; dx++) {
+    for (let dz = -1; dz <= 1 && cleared < 2; dz++) {
+      for (let dy = -1; dy <= 1 && cleared < 2; dy++) {
+        let b;
+        try {
+          b = pet.dimension.getBlock({ x: b0.x + dx, y: b0.y + dy, z: b0.z + dz });
+        } catch {
+          continue;
+        }
+        if (b && WEEDS.has(b.typeId) && slip.done + cleared < slip.need) {
+          b.setType("minecraft:air");
+          cleared++;
+        }
+      }
+    }
+  }
+  if (cleared) addProgress(pet, slip, cleared);
+}
+
+function hunt(pet, slip) {
+  let target;
+  try {
+    target = pet.dimension.getEntities({ families: ["monster"], location: pet.location, maxDistance: 16, closest: 1 })[0];
+  } catch {
+    return;
+  }
+  if (!target) return;
+  const d = Math.hypot(target.location.x - pet.location.x, target.location.z - pet.location.z);
+  const ranged = slip.type === "ranged";
+  const reach = ranged ? 8 : 2.5;
+  if (d > reach) return hopToward(pet, target.location, ranged ? 6 : 1.5);
+  try {
+    target.applyDamage(ranged ? 3 : 4, { cause: "entityAttack", damagingEntity: pet });
+  } catch {
+    /* target gone */
+  }
+}
+
+/** pets with a work slip walk to their job and do it (called every 2 s) */
+export function tickJobs() {
   for (const owner of world.getAllPlayers()) {
     for (const pet of ownedPets(owner)) {
       const slip = getJson(pet, K.slip);
-      if (!slip || slip.type !== "weeding") continue;
-      let cleared = 0;
-      const base = pet.location;
-      scan: for (let dx = -3; dx <= 3; dx++) {
-        for (let dz = -3; dz <= 3; dz++) {
-          for (let dy = -1; dy <= 1; dy++) {
-            let b;
-            try {
-              b = pet.dimension.getBlock({ x: Math.floor(base.x) + dx, y: Math.floor(base.y) + dy, z: Math.floor(base.z) + dz });
-            } catch {
-              continue;
-            }
-            if (!b || !WEEDS.has(b.typeId)) continue;
-            b.setType("minecraft:air");
-            cleared++;
-            if (cleared >= 2 || slip.done + cleared >= slip.need) break scan;
-          }
-        }
-      }
-      if (!cleared) continue;
-      slip.done = Math.min(slip.need, slip.done + cleared);
-      if (slip.done >= slip.need) complete(pet, slip);
-      else setJson(pet, K.slip, slip);
+      if (!slip) continue;
+      if (slip.type === "weeding") weed(pet, slip);
+      else hunt(pet, slip);
     }
   }
 }
 
-world.afterEvents.entityDie.subscribe((ev) => {
-  const killer = ev.damageSource?.damagingEntity;
-  const dead = ev.deadEntity;
-  if (isPet(dead)) {
-    const slip = getJson(dead, K.slip);
-    if (slip) {
-      setBoardState(slip, "failed");
-      const owner = findPlayer(ownerId(dead));
-      if (owner) say(owner, `§c${petName(dead)}이(가) 쓰러져 작업표가 실패했습니다`);
+function boardKeys() {
+  return getJson(world, "ck:boards") ?? [];
+}
+
+/** the dead pet may already be invalid, so look its slips up on the boards by entity id */
+function failSlipsOf(petId) {
+  for (const key of boardKeys()) {
+    const st = getJson(world, "ck:board:" + key);
+    if (!st) continue;
+    let changed = false;
+    for (const s of st.slips) {
+      if (s.taker === petId && s.state === "taken") {
+        s.state = "failed";
+        changed = true;
+      }
     }
+    if (changed) save(key, st);
+  }
+}
+
+world.afterEvents.entityDie.subscribe((ev) => {
+  const dead = ev.deadEntity;
+  let deadType;
+  try {
+    deadType = dead.typeId;
+  } catch {
     return;
   }
+  if (deadType in PET_NAMES) {
+    failSlipsOf(dead.id);
+    for (const p of world.getAllPlayers()) say(p, `§c${PET_NAMES[deadType]}이(가) 쓰러져 작업표가 실패했습니다`);
+    return;
+  }
+  const killer = ev.damageSource?.damagingEntity;
   if (!killer || !isPet(killer)) return;
   const slip = getJson(killer, K.slip);
   if (!slip || slip.type === "weeding") return;
   try {
     if (!dead.matches({ families: ["monster"] })) return;
   } catch {
-    return;
+    // dead entity already invalid: still count it, the damage came from the pet
   }
-  slip.done++;
-  if (slip.done >= slip.need) complete(killer, slip);
-  else setJson(killer, K.slip, slip);
+  addProgress(killer, slip, 1);
 });
